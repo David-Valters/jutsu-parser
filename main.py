@@ -45,33 +45,69 @@ def down(response,file_name="hz.mp4",path=''):
                 sys.stdout.write(f"\r[%s%s] {(lambda dl: status if dl!=total_length else finish    )(dl)}   " % ('#' * done, '-' * (50-done)) )	
                 sys.stdout.flush()
             print()
-
+def input_v(min:int,maxx:int=None,list=[])->int:
+    while True:
+        try:
+            v=input()
+            if list!=[]:
+                for i in list:
+                    if i==v:
+                        return i
+            v=int(v)
+            if v<min:
+                print('Введене число менше допустимого')
+                continue
+            if maxx!=None and v>maxx:
+                print('Введене число більше допустимого')
+                continue
+        except ValueError:
+            print('Введіть число ')  
+            continue
+        return v
 def main():
-	session = requests.Session()
-	session.headers = {
-		"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.1.2222.33 Safari/537.36",
-		"Accept-Encoding": "*",
-		"Connection": "close"
-	}
-	session.keep_alive = False
+    session = requests.Session()
+    session.headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.1.2222.33 Safari/537.36",
+        "Accept-Encoding": "*",
+        "Connection": "close"
+    }
+    session.keep_alive = False
 
-	try:
-		r = session.get('https://jut.su/watashi-ga-motenai/episode-1.html')
-	except requests.exceptions.ConnectionError:
-		print("CONECT ERROR")
-		return
-	print(r.status_code)
-	soup=BeautifulSoup(r.content,'html.parser')
-	item=soup.find(id="my-player")
-	items=item.findAll('source')
-	ll=[]
-	for i in items:
-		ll.append([ i['res'],i['src'] ])
+    URL=input('Введіть посилання (приклад https://jut.su/naruuto/season-1/episode-133.html): ')
+    try:
+        r = session.get(URL)
+    except requests.exceptions.ConnectionError:
+        print("CONECT ERROR")
+        return
+    print(r.status_code)
+    soup=BeautifulSoup(r.content,'html.parser')
+    item=soup.find(id="my-player")
+    items=item.findAll('source')
+    ll=[]
+    for i in items:
+        ll.append({ "qua":i['res'],"url":i['src'] })#qua-якість
 
-	url=ll[0][1]
-	response = session.get(url, stream=True)
-	print(response.status_code)
-	down(response)
+    print('Load...')
+    for i in ll:        
+        i["res"]=(session.get(i['url'], stream=True))
+    j=1
+    print('Виберіть якість: ')
+    subs="/Enter"
+    for i in ll:
+        print(f"[{j}{subs}] { i['qua'] } {convert_size( int(i['res'].headers.get('content-length'))  )}")
+        subs=""
+        j+=1
+    v=input_v(1,len(ll),[''])
+    if v=='':
+        v=0
+    else:
+        v-=1
+    response=ll[v]["res"]
+    URL=ll[v]["url"]
+    print(response.status_code)
+    name=URL.split("/")[-1].split(".")[0]+f"_{ll[v]['qua']}_"+".mp4"
+    down(response,name)
+    input('нажміть Enter щоб закрити вікно')
 
 
 
