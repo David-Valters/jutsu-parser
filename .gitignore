@@ -1,2 +1,5 @@
 *.mp4
-*.txt
+__pycache__/
+Download/
+config/
+*.json
