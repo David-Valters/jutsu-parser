@@ -35,12 +35,12 @@ def convert_size(size_bytes,write_type=1):
        return s
 
 
-def downloadFile(url, directory,session) :
-    with open(directory, 'wb') as f:
-        print ("Downloading . . .\n")
+def downloadFile(url, path,file_name,session) :
+    with open(os.path.join(path,file_name+".mp4"), 'wb') as f:
+        
         start = time.time() # start time
         r = session.get(url, stream=True)
-
+        print (f"Downloading {file_name}\n")
         # total length in bytes of the file
         total_length = float(r.headers.get('content-length'))
 
@@ -73,8 +73,8 @@ def downloadFile(url, directory,session) :
                 fmt_string = "\r%6.2f %s [%s%s] %7.2f%s / %4.2f %s %7.2f %s"
                 
                 set_of_vars = ( float(done), '%',
-                                '*' * int(done/2),
-                                '_' * int(50-done/2),
+                                '*' * int((done/2)/2),
+                                '_' * int((50-done/2)/2),
                                 downloaded, check_unit(d),
                                 tl, check_unit(total_length),
                                 download_speed, speed_unit)
@@ -121,12 +121,18 @@ class Taytl:
         self._soup=None
         self.path=[]
         self.url=url
+        self.exists =True
         try:
             r = session.get(self.url)
         except requests.exceptions.ConnectionError:
-            print("CONECT ERROR")
-            return None        
-        self._soup=BeautifulSoup(r.content,'html.parser')        
+            print("CONECT ERROR\nВідсутнє підключення до інтернету або не дійсне посилання")
+            self.exists=False
+            return         
+        self._soup=BeautifulSoup(r.content,'html.parser')
+        if self.get_error_mes():
+            print(self.get_error_mes())
+            self.exists=False
+            return None
         real_url=self._soup.find('link',rel='canonical')
         if real_url:
             real_url=real_url['href']
@@ -142,6 +148,12 @@ class Taytl:
             n=url[i1+7:i2]
             self.path.append(f"{n} сезон {self.path[0]}")
 
+    def get_error_mes(self):
+        item=self._soup.find('div',class_="clear berrors")
+        if item:
+            return item.text
+        else:
+            return None
 
     def get_name_with_url(self):#/naruuto/season-2/episode-3.htm
         i1=self.url.find('//')
@@ -178,7 +190,7 @@ class Taytl:
         return list_url
     def get_name_taytl(self):#Наруто
         item= self._soup.find('a',href=self.get_base_taytl_url(),itemprop="item")
-        return item.text.strip().replace("Смотреть ", "")
+        return item.text.strip().replace("Смотреть ", "") if item else None
 
     def get_parts(self):
         list_part=[]
@@ -244,6 +256,8 @@ def menu_episodes(taytl:Taytl):
     list_episodes=[]
     eps=taytl.get_episodes()
     len_eps=len(eps)
+    if len_eps==0:
+        return [],None
     base_url=taytl.get_base_taytl_url()
     isBase = (True if base_url==taytl.url else False)
     print(f"[1]-Вибрати декілька серій \n[2]-Вибрати останню серію - ({len_eps}) \n[3]-Вибрати всі \n"+("" if isBase else "[0]-Головна сторінка тайтла\n")+"> ",end='')
@@ -288,24 +302,10 @@ def main():
     url=input('Посилання на тайтл:')
     session=MySession()
 
-    #приклад посилань
-    # url='https://jut.su/naruuto/film/'
-    # url='https://jut.su/naruuto/'
-    # url='https://jut.su/kono-healer/'
-    # url='https://jut.su/naruuto/film-9.html'
-    # url='https://jut.su/boku-hero-academia/film-1.html'
-    # url='https://jut.su/date-o-live/'
-    # url='https://jut.su/my-hero-academia/'
-    # url='https://jut.su/boku-hero-academia/'
-    # url='https://jut.su/boku-hero-academia/season-5/'
-    # url='https://jut.su/water/'
-    # url='https://jut.su/'
-    # url='https://jut.su/kono-healer/episode-1.html'
-    # url='https://jut.su/naruuto/season-2/episode-3.html'
-
-
     while True:
         taytl=Taytl(url, session)
+        if not taytl.exists:
+            return
         list_episodes=[]
         
         if taytl.isEpisod():
@@ -323,10 +323,14 @@ def main():
                 url=menu_parts(taytl)
 
     if len(list_episodes)!=0:
+        print('Збирання даних')
         if not isinstance(list_episodes[0], Episod):
             list_episodes[0]=Episod(list_episodes[0]['url'],session)  
 
         ll=list_episodes[0].get_stream_urls()
+        if not ll:
+            print('\nПосилання не дійсне !!!')
+            return        
         for i in ll:        
             i["res"]=(session.get(i['url'], stream=True))
         j=1
@@ -350,10 +354,10 @@ def main():
             if not isinstance(i, Episod):
                 i=Episod(i['url'],session)
             strem_url=i.get_stream_urls()[v]['url']
-            downloadFile(strem_url, os.path.join(path,i.get_name()+".mp4"),session)
+            downloadFile(strem_url,path,i.get_name(),session)
     else:
-        print('Не найдені серії для вибору')
-    
+        print('На цій сторінці не найдені серії для вибору ')
+
 if __name__ == '__main__':
     try:
         main()
@@ -367,9 +371,9 @@ if __name__ == '__main__':
         print("OOPS!! Timeout Error")
         print(str(e))
     except requests.RequestException as e:
-        print("\n\nOOPS!! Загальна помилка\nВідправте дані полмилки мені в телеграм @sendmesmebot")
+        print("\n\nНе дійсне посилання")
         print(str(e))
-        print (traceback.format_exc())
+        # print (traceback.format_exc())
         
     except KeyboardInterrupt:
         print("\nХтось закрив програму")
