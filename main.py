@@ -296,6 +296,12 @@ def menu_parts(taytl:Taytl):
         return base_url
     else:
         return parts[v-1]['url']
+def clear(s):
+    lb=r'<>:"/\|?*'
+    for C in lb:
+        if(s.find(C)!=-1):
+            s=s.replace(C, '')
+    return s
     
 def main():
     print('start')
@@ -347,14 +353,14 @@ def main():
         else:
             v-=1
         path="Download"
-        for i in taytl.path:
-            path=os.path.join(path,i)
+        for i in taytl.path:            
+                path=os.path.join(path,clear(i))
         os.makedirs(path, exist_ok=True)
         for i in list_episodes:
             if not isinstance(i, Episod):
                 i=Episod(i['url'],session)
             strem_url=i.get_stream_urls()[v]['url']
-            downloadFile(strem_url,path,i.get_name(),session)
+            downloadFile(strem_url,path,clear(i.get_name()),session)
     else:
         print('На цій сторінці не найдені серії для вибору ')
 
