@@ -252,6 +252,53 @@ class Episod:
             name :str = item.text      
             return name.replace("Смотреть ", "")
 
+def input_d(start:int,end:int):
+    while True:
+        choise_list = []
+        v=input("> ").strip()
+        if v == '?':
+            print(f"Приклади: ('2-8'; '-5' - '{start}-5'; '2-' - '2-{end}'; Enter/'-' - всі серії; l - остання серія; 0 - повернутись на ГОЛОВНЕ меню)")
+            continue
+        if v == '' or v == '-':
+            choise_list = [start, end]
+        elif v =='0':
+            return None
+        elif v =='l':
+            choise_list = [end, end]
+        elif v.count('-') > 1:
+            print("Некоректний ввід, потрібна лише одна '-'")
+            continue
+        else:
+            choise_list = [ x.strip() for x in v.split('-') ]
+            i=0
+            isGood=True
+            for x in choise_list:
+                if x=='':
+                    if i==0:
+                        choise_list[0]=start
+                    else:
+                        choise_list[1]=end
+                else:
+                    if x.isdigit():
+                        choise_list[i]=int(x)
+                    else:
+                        print("Введіть число, або лишіть пропуск")
+                        isGood=False
+                        break
+                    if choise_list[i] < start or choise_list[i] > end: # Перевірка чи елемент ще в межах діапазону
+                        print('Ви вийшли за діапазон')
+                        isGood=False
+                        break
+                i += 1
+            if not isGood:
+                continue
+            if len(choise_list) == 1:
+                choise_list.append(choise_list[0])
+            if choise_list[0] > choise_list[1]: # Перевірка чи діапазон записаний вірно (1-5, а не 5-1)
+                print('Невірний діапазон')
+                continue
+        return choise_list
+
 def menu_episodes(taytl:Taytl):
     list_episodes=[]
     eps=taytl.get_episodes()
@@ -259,26 +306,15 @@ def menu_episodes(taytl:Taytl):
     if len_eps==0:
         return [],None
     base_url=taytl.get_base_taytl_url()
-    isBase = (True if base_url==taytl.url else False)
-    print(f"[1]-Вибрати декілька серій \n[2]-Вибрати останню серію - ({len_eps}) \n[3]-Вибрати всі \n"+("" if isBase else "[0]-Головна сторінка тайтла\n")+"> ",end='')
-    v=input_v(1-(0 if isBase else 1),len_eps)
-
-    if v==0:
+    print("Введіть діапазон, або '?' для підказки")
+    se=input_d(1, len_eps)
+    if se==None:
         return [], base_url
-
-    if v==1:
-        print(f"З якої серії почати завантажування(1-{len_eps})? ",end='')
-        start=input_v(1,len_eps)
-        print(f"По яку серію завантажувати({start}-{len_eps})? ",end='')
-        end=input_v(start,len_eps)
-        list_episodes=eps[start-1:end]
-    elif v==2:
-        list_episodes.append(eps[-1])
-    elif v==3:
-        for i in eps:
-            list_episodes.append(i)
+    else:
+        list_episodes=eps[se[0]-1:se[1]]
         
     return list_episodes, None
+
 def menu_parts(taytl:Taytl):
     parts=taytl.get_parts()
     base_url=taytl.get_base_taytl_url()
