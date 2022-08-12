@@ -362,14 +362,14 @@ def main():
             strem_url=i.get_stream_urls()[v]['url']
             downloadFile(strem_url,path,clear(i.get_name()),session)
     else:
-        print('На цій сторінці не найдені серії для вибору ')
+        print('На цій сторінці серій для вибору не знайдено')
 
 if __name__ == '__main__':
     try:
         main()
     except ImportError as e:
         print(' ')
-        print("Помилкаа імпорту бібліотеки,введіть 'python -m pip install -r requirements.txt' якщо не допоможt то примусовов обновіть файли 'python update.py'")
+        print("Помилка імпорту бібліотек/(и),введіть 'python -m pip install -r requirements.txt' якщо не допоможе то примусовов оновіть файли 'python update.py'")
     except requests.ConnectionError as e:
         print("OOPS!! Помилка з'єднання. Переконайтеся, що ви підключені до Інтернету.\n")
         print(str(e))			       
