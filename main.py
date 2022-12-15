@@ -256,8 +256,8 @@ def input_d(start:int,end:int):
     while True:
         choise_list = []
         v=input("> ").strip()
-        if v == '?':
-            print(f"Приклади: ('2-8'; '-5' - '{start}-5'; '2-' - '2-{end}'; Enter/'-' - всі серії; l - остання серія; 0 - повернутись на ГОЛОВНЕ меню)")
+        if v == '?' or v == 'h':
+            print(f"Приклади: ('2-8'; '-5' - '{start}-5'; '2-' - '2-{end}'; Enter/'-' - всі серії; l - остання серія); 0 - повернутись на ГОЛОВНЕ меню; q - вихід з програми; ?/h - довідка")
             continue
         if v == '' or v == '-':
             choise_list = [start, end]
@@ -268,6 +268,8 @@ def input_d(start:int,end:int):
         elif v.count('-') > 1:
             print("Некоректний ввід, потрібна лише одна '-'")
             continue
+        elif v =='q':
+            sys.exit()
         else:
             choise_list = [ x.strip() for x in v.split('-') ]
             i=0
@@ -306,7 +308,7 @@ def menu_episodes(taytl:Taytl):
     if len_eps==0:
         return [],None
     base_url=taytl.get_base_taytl_url()
-    print("Введіть діапазон, або '?' для підказки")
+    print(f"Введіть діапазон (1 - {len_eps}), або '?' для підказки")
     se=input_d(1, len_eps)
     if se==None:
         return [], base_url
