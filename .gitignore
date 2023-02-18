@@ -1,5 +1,6 @@
 *.mp4
 __pycache__/
 Download/
+Download
 config/
 *.json
